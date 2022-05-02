@@ -1,0 +1,19 @@
+language: node_js
+
+dist: bionic
+
+node_js:
+    - "14"
+    - "16"
+    - "18"
+
+cache: yarn
+
+if: tag IS blank
+
+script:
+    - set -e
+    - yarn run lint
+    - yarn run prettier:check
+    - yarn run build
+    - set +e

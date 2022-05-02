@@ -1,0 +1,19 @@
+{
+	"compilerOptions": {
+		"rootDir": "src",
+		"outDir": "lib",
+		"module": "commonjs",
+		"target": "es2019",
+		"lib": ["es2019"],
+		"sourceMap": true,
+		"moduleResolution": "node",
+		"declaration": true,
+		"forceConsistentCasingInFileNames": true,
+		"noImplicitReturns": true,
+		"importHelpers": true,
+		"strict": true,
+		"noUnusedLocals": true,
+		"downlevelIteration": true
+	},
+	"exclude": ["node_modules", "lib", "es"]
+}
