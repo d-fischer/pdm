@@ -2,8 +2,8 @@
 	"compilerOptions": {
 		"rootDir": "src",
 		"outDir": "lib",
-		"module": "commonjs",
-		"target": "es2019",
+		"module": "esnext",
+		"target": "esnext",
 		"lib": ["es2019"],
 		"sourceMap": true,
 		"moduleResolution": "node",
@@ -13,7 +13,13 @@
 		"importHelpers": true,
 		"strict": true,
 		"noUnusedLocals": true,
-		"downlevelIteration": true
+		"downlevelIteration": true,
+		"resolveJsonModule": true,
+		"esModuleInterop": true
 	},
-	"exclude": ["node_modules", "lib", "es"]
+	"ts-node": {
+		"esm": true,
+		"experimentalResolverFeatures": true
+	},
+	"exclude": ["node_modules", "lib"]
 }

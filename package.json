@@ -1,49 +1,51 @@
 {
-  "name": "LIBRARY_NAME",
+  "name": "pdm",
   "version": "0.0.0",
-  "description": "",
+  "description": "A project directory manager.",
+  "type": "module",
   "keywords": [],
   "main": "lib",
   "types": "lib",
-  "exports": {
-    ".": {
-      "require": "./lib/index.js",
-      "import": "./es/index.mjs"
-    }
-  },
+  "bin": "./bin/pdm.mjs",
   "sideEffects": false,
   "repository": {
     "type": "git",
-    "url": "https://github.com/d-fischer/LIBRARY_NAME.git"
+    "url": "https://github.com/d-fischer/pdm.git"
   },
   "author": "Daniel Fischer <daniel@d-fischer.dev>",
   "funding": "https://github.com/sponsors/d-fischer",
   "license": "MIT",
   "dependencies": {
     "@types/node": "^14.14.7",
-    "tslib": "^2.4.0"
+    "clipanion": "^3.2.0-rc.11",
+    "env-paths": "^3.0.0",
+    "prompts": "^2.4.2",
+    "tslib": "^2.4.0",
+    "typanion": "^3.8.0"
   },
   "devDependencies": {
     "@d-fischer/eslint-config": "^6.1.2",
+    "@types/prompts": "^2.0.14",
     "eslint": "^8.14.0",
     "husky": "^4.3.0",
     "lint-staged": "^12.4.1",
     "prettier": "^2.6.2",
-    "tsukuru": "^0.7.4",
+    "ts-node": "^10.7.0",
     "typescript": "~4.6.4"
   },
   "files": [
     "LICENSE",
     "README.md",
     "lib",
-    "es"
+    "shell-scripts"
   ],
   "scripts": {
+    "clean": "node -e \"require('fs').rmdirSync('./lib', { recursive: true });\"",
     "lint": "eslint --ext ts src",
     "prettier:check": "prettier --check 'src/**'",
     "prettier:fix": "prettier --write 'src/**'",
-    "build": "tsukuru",
-    "rebuild": "tsukuru --clean"
+    "build": "tsc",
+    "rebuild": "yarn run clean && yarn run build"
   },
   "husky": {
     "hooks": {
