@@ -40,7 +40,7 @@
     "shell-scripts"
   ],
   "scripts": {
-    "clean": "node -e \"require('fs').rmdirSync('./lib', { recursive: true });\"",
+    "clean": "node -e \"require('fs').rmSync('./lib', { recursive: true });\"",
     "lint": "eslint --ext ts src",
     "prettier:check": "prettier --check 'src/**'",
     "prettier:fix": "prettier --write 'src/**'",
