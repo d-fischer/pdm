@@ -47,6 +47,11 @@ export class GetPathCommand extends Command {
 				return 1;
 			}
 
+			if (results.length === 1) {
+				this.context.stdout.write(path.join(projectRoot, results[0]));
+				return 0;
+			}
+
 			try {
 				const { projectToReturn } = (await prompts({
 					name: 'projectToReturn',
