@@ -1,5 +1,7 @@
 # pdm - a Project Directory Manager
 
+![Demo](/demo.gif?raw=true "Demo")
+
 pdm is a little tool that helps you manage all your different projects.
 
 The initial version only supports switching between the projects inside one folder. 
