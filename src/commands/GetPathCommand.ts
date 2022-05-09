@@ -42,7 +42,7 @@ export class GetPathCommand extends Command {
 
 			if (results.length === 0) {
 				this.context.stderr.write(
-					`Could not find a match for the project name ${this.cli.format().code(this.project)}.`
+					`Could not find a match for the project name ${this.cli.format().code(this.project)}.\n`
 				);
 				return 1;
 			}
