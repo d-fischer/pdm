@@ -29,7 +29,7 @@ After that, you can switch between projects using the `gp` command. It supports 
 For all following examples, suppose there are the following project folders inside the parent:
 
 ```
-abc def foo bar baz
+abc foo bar baz
 ```
 
 ```shell
@@ -48,10 +48,11 @@ gp fo
 ```
 
 ```shell
-gp f
+gp b
 # ? The input is ambiguous, please choose the correct project you want to go to › - Use arrow-keys. Return to submit.
-# ❯   def
-#     foo
+# ❯   abc
+#     bar
+#     baz
 
 # after selection, you are in the chosen folder
 ```
