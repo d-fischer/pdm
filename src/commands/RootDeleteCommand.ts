@@ -2,7 +2,10 @@ import { Command, Option } from 'clipanion';
 import { getConfig, migrateConfig, writeConfig } from '../Config.js';
 
 export class RootDeleteCommand extends Command {
-	static paths = [['root', 'delete']];
+	static paths = [
+		['root', 'delete'],
+		['root', 'remove']
+	];
 
 	static usage = Command.Usage({
 		description: 'delete a project root',

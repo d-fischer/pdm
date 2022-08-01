@@ -7,10 +7,11 @@ export class GetListCommand extends Command {
 
 	async execute(): Promise<number> {
 		const { roots } = await getConfig();
+		const fmt = this.cli.format();
 
 		if (!roots?.length) {
 			this.context.stderr.write(
-				`Please set up a project root using:\n\n\t${this.cli.format().code('pdm root add /path/to/projects')}\n`
+				`Please set up a project root using:\n\n\t${fmt.code('pdm root add /path/to/projects')}\n`
 			);
 			return 1;
 		}

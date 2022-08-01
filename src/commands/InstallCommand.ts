@@ -39,10 +39,9 @@ export class InstallCommand extends Command {
 	});
 
 	async execute(): Promise<number> {
+		const fmt = this.cli.format();
 		if (this.shell !== 'fish') {
-			this.context.stderr.write(
-				`This command currently only supports the ${this.cli.format().code('fish')} shell.\n`
-			);
+			this.context.stderr.write(`This command currently only supports the ${fmt.code('fish')} shell.\n`);
 			return 1;
 		}
 
@@ -56,7 +55,7 @@ export class InstallCommand extends Command {
 		await fs.writeFile(path.join(completionsPath, 'gp.fish'), `source ${completionsScriptPath}\n`, 'utf-8');
 		await fs.writeFile(path.join(commandsPath, 'gp.fish'), `source ${commandsScriptPath}\n`, 'utf-8');
 
-		this.context.stdout.write(`Successfully installed ${this.cli.format().code(this.shell)} shell helpers\n`);
+		this.context.stdout.write(`Successfully installed ${fmt.code(this.shell)} shell helpers\n`);
 
 		return 0;
 	}
@@ -73,14 +72,13 @@ export class InstallCommand extends Command {
 		try {
 			return (await this._execShell('pkg-config --variable completionsdir fish')).trimEnd();
 		} catch (e) {
-			this.context.stderr.write(`Unable to find the completions path via ${this.cli.format().code('pkg-config')}.
-Please make sure ${this.cli
-				.format()
-				.code(
-					'pkg-config'
-				)} is installed on your system or manually pass the path for completions using the ${this.cli
-				.format()
-				.code('--completions-path')} option.\n`);
+			const fmt = this.cli.format();
+			this.context.stderr.write(`Unable to find the completions path via ${fmt.code('pkg-config')}.
+Please make sure ${fmt.code(
+				'pkg-config'
+			)} is installed on your system or manually pass the path for completions using the ${fmt.code(
+				'--completions-path'
+			)} option.\n`);
 
 			return process.exit(1);
 		}
@@ -98,14 +96,13 @@ Please make sure ${this.cli
 		try {
 			return (await this._execShell('pkg-config --variable functionsdir fish')).trimEnd();
 		} catch (e) {
-			this.context.stderr.write(`Unable to find the commands path via ${this.cli.format().code('pkg-config')}.
-Please make sure ${this.cli
-				.format()
-				.code(
-					'pkg-config'
-				)} is installed on your system or manually pass the path for commands using the ${this.cli
-				.format()
-				.code('--commands-path')} option.\n`);
+			const fmt = this.cli.format();
+			this.context.stderr.write(`Unable to find the commands path via ${fmt.code('pkg-config')}.
+Please make sure ${fmt.code(
+				'pkg-config'
+			)} is installed on your system or manually pass the path for commands using the ${fmt.code(
+				'--commands-path'
+			)} option.\n`);
 
 			return process.exit(1);
 		}
