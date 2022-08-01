@@ -6,7 +6,7 @@
 		"target": "esnext",
 		"lib": ["es2019"],
 		"sourceMap": true,
-		"moduleResolution": "node",
+		"moduleResolution": "nodenext",
 		"declaration": true,
 		"forceConsistentCasingInFileNames": true,
 		"noImplicitReturns": true,

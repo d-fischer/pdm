@@ -4,8 +4,14 @@ import path from 'path';
 
 const paths = envPaths('pdm', { suffix: '' });
 
+export interface ProjectRoot {
+	name: string;
+	path: string;
+}
+
 export interface Config {
 	projectRoot?: string;
+	roots?: ProjectRoot[];
 }
 
 async function ensureConfigDir() {
@@ -43,4 +49,18 @@ export async function writeConfig(config: Config): Promise<void> {
 	const contents = JSON.stringify(config);
 
 	await fs.writeFile(path.join(dir, 'config.json'), contents, 'utf-8');
+}
+
+export async function migrateConfig(): Promise<void> {
+	const conf = await getConfig();
+	if (conf.projectRoot) {
+		conf.roots ??= [];
+		conf.roots.push({
+			name: 'legacy',
+			path: conf.projectRoot.replace(/\/$/, '')
+		});
+		conf.projectRoot = undefined;
+	}
+
+	await writeConfig(conf);
 }
