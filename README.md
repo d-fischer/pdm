@@ -18,10 +18,10 @@ npm install -g pdm
 pdm install fish # currently, fish and bash are the only supported shells
 ```
 
-You also need to set up your project parent folder. Currently, only a single parent is supported.
+You also need to set up your project parent folder.
 
 ```shell
-pdm config project-root ~/projects
+pdm root add ~/projects
 ```
 
 ## Usage

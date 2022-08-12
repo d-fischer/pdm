@@ -53,18 +53,20 @@ const shells: Record<string, ShellConfig> = {
 			return (await execShell('pkg-config --variable=completionsdir bash-completion')).trimEnd();
 		},
 		async getSystemCommandsDir() {
-			// Bash doesn't define a directory for functions, so put gp in the standard location.
-			return '/usr/local/bin';
+			return '/etc';
 		},
 		async installCommands(commandDir) {
 			const commandsScriptPath = scriptsPath('bash/commands/gp.sh');
+			const script = `\nsource '${commandsScriptPath}'\n`;
 			// Bash doesn't have a standard directory where functions will be sourced. If we're asked to
-			// install in the user's home directory, they probably just want it added to their bashrc.
+			// install in the user's home directory or /etc, they probably just want it added to the bashrc.
 			// Otherwise, assume the user set up a functions directory like fish has.
 			if (commandDir === os.homedir()) {
-				await fs.appendFile(path.join(commandDir, '.bashrc'), `\nsource '${commandsScriptPath}'\n`, 'utf-8');
+				await fs.appendFile(path.join(commandDir, '.bashrc'), script, 'utf-8');
+			} else if (commandDir === '/etc') {
+				await fs.appendFile(path.join(commandDir, 'bashrc'), script, 'utf-8');
 			} else {
-				await fs.writeFile(path.join(commandDir, 'gp.sh'), `\nsource '${commandsScriptPath}'\n`, 'utf-8');
+				await fs.writeFile(path.join(commandDir, 'gp.sh'), script, 'utf-8');
 			}
 		}
 	},
