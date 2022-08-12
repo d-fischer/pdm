@@ -4,7 +4,7 @@
 
 pdm is a little tool that helps you manage all your different projects.
 
-The initial version only supports switching between the projects inside one folder. 
+The initial version only supports switching between the projects inside one folder.
 Later, there will be additional features like support for multiple project folders
 and keeping your tooling configuration in sync.
 
@@ -15,7 +15,7 @@ yarn global add pdm
 # or
 npm install -g pdm
 
-pdm install fish # currently, fish is the only supported shell
+pdm install fish # currently, fish and bash are the only supported shells
 ```
 
 You also need to set up your project parent folder. Currently, only a single parent is supported.
@@ -62,7 +62,6 @@ gp b
 ## To do
 
 - Shell support
-  - bash
   - zsh
 - Multiple parent folder support (namespacing?)
 - Config updater
