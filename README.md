@@ -4,9 +4,8 @@
 
 pdm is a little tool that helps you manage all your different projects.
 
-The initial version only supports switching between the projects inside one folder.
-Later, there will be additional features like support for multiple project folders
-and keeping your tooling configuration in sync.
+The initial version only supports switching between projects within project folders.
+Later, there will be additional features like keeping your tooling configuration in sync.
 
 ## Installation
 
