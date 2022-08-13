@@ -13,7 +13,6 @@
 		"importHelpers": true,
 		"strict": true,
 		"noUnusedLocals": true,
-		"downlevelIteration": true,
 		"resolveJsonModule": true,
 		"esModuleInterop": true
 	},

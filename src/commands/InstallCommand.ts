@@ -2,9 +2,96 @@ import { exec } from 'child_process';
 import { Command, Option } from 'clipanion';
 import envPaths from 'env-paths';
 import { promises as fs } from 'fs';
+import os from 'os';
 import path from 'path';
+import url from 'url';
 
-const fishUserConfigPath = envPaths('fish', { suffix: '' }).config;
+async function execShell(cmd: string): Promise<string> {
+	return await new Promise<string>((resolve, reject) => {
+		exec(cmd, (error, stdout) => {
+			if (error) {
+				reject(error);
+				return;
+			}
+
+			resolve(stdout);
+		});
+	});
+}
+
+interface ShellConfig {
+	completions: string;
+	getUserCompletionDir: () => string;
+	getUserCommandsDir: () => string;
+	getSystemCompletionDir: () => Promise<string>;
+	getSystemCommandsDir: () => Promise<string>;
+	installCommands: (commandDir: string) => Promise<void>;
+}
+
+const currentDir = path.dirname(url.fileURLToPath(import.meta.url));
+const scriptsPath = (p: string) => path.resolve(currentDir, '../../shell-scripts/', p);
+
+const shells: Record<string, ShellConfig> = {
+	bash: {
+		completions: scriptsPath('bash/completions/gp.sh'),
+		getUserCompletionDir() {
+			// Using envPaths for bash likely doesn't make sense for most users.
+			// On Windows, it would tell us to put files in %APPDATA%, which git bash doesn't look at.
+			// https://github.com/scop/bash-completion#faq
+			if (process.env.BASH_COMPLETION_USER_DIR) {
+				return process.env.BASH_COMPLETION_USER_DIR;
+			} else if (process.env.XDG_DATA_HOME) {
+				return path.join(process.env.XDG_DATA_HOME, 'bash-completion/completions');
+			} else {
+				return path.join(os.homedir(), '.local/share/bash-completion');
+			}
+		},
+		getUserCommandsDir() {
+			return os.homedir();
+		},
+		async getSystemCompletionDir() {
+			return (await execShell('pkg-config --variable=completionsdir bash-completion')).trimEnd();
+		},
+		async getSystemCommandsDir() {
+			return '/etc';
+		},
+		async installCommands(commandDir) {
+			const commandsScriptPath = scriptsPath('bash/commands/gp.sh');
+			const script = `\nsource '${commandsScriptPath}'\n`;
+			// Bash doesn't have a standard directory where functions will be sourced. If we're asked to
+			// install in the user's home directory or /etc, they probably just want it added to the bashrc.
+			// Otherwise, assume the user set up a functions directory like fish has.
+			if (commandDir === os.homedir()) {
+				await fs.appendFile(path.join(commandDir, '.bashrc'), script, 'utf-8');
+			} else if (commandDir === '/etc') {
+				await fs.appendFile(path.join(commandDir, 'bashrc'), script, 'utf-8');
+			} else {
+				await fs.writeFile(path.join(commandDir, 'gp.sh'), script, 'utf-8');
+			}
+		}
+	},
+	fish: {
+		completions: scriptsPath('fish/completions/gp.fish'),
+		getUserCompletionDir() {
+			const fishUserConfigPath = envPaths('fish', { suffix: '' }).config;
+			return path.join(fishUserConfigPath, 'functions');
+		},
+		getUserCommandsDir() {
+			const fishUserConfigPath = envPaths('fish', { suffix: '' }).config;
+			return path.join(fishUserConfigPath, 'completions');
+		},
+		async getSystemCompletionDir() {
+			return (await execShell('pkg-config --variable completionsdir fish')).trimEnd();
+		},
+		async getSystemCommandsDir() {
+			return (await execShell('pkg-config --variable functionsdir fish')).trimEnd();
+		},
+		async installCommands(commandDir) {
+			const commandsScriptPath = scriptsPath('fish/commands/gp.fish');
+			await fs.writeFile(path.join(commandDir, 'gp.fish'), `source '${commandsScriptPath}'\n`, 'utf-8');
+		}
+	}
+};
 
 export class InstallCommand extends Command {
 	static paths = [['install']];
@@ -13,8 +100,8 @@ export class InstallCommand extends Command {
 		description: 'install helpers to your shell',
 		details: `
 			Install a shell helper for pdm to quickly navigate between projects.
-			
-			Currently, only the fish shell is supported.
+
+			Currently, only the fish and bash shells are supported.
 		`,
 		examples: [
 			['Install fish shell helpers for yourself', 'pdm install fish'],
@@ -40,20 +127,23 @@ export class InstallCommand extends Command {
 
 	async execute(): Promise<number> {
 		const fmt = this.cli.format();
-		if (this.shell !== 'fish') {
-			this.context.stderr.write(`This command currently only supports the ${fmt.code('fish')} shell.\n`);
+		if (!{}.hasOwnProperty.call(shells, this.shell)) {
+			this.context.stderr.write(
+				`This command currently only supports the ${fmt.code('fish')} and ${fmt.code('bash')} shells.\n`
+			);
 			return 1;
 		}
 
-		const completionsPath = await this._getCompletionsPath();
-		const commandsPath = await this._getCommandsPath();
+		const completionsScriptPath = shells[this.shell].completions;
 
-		const currentDir = path.dirname(import.meta.url.replace(/^file:\/\//, ''));
-		const completionsScriptPath = path.resolve(currentDir, '../../shell-scripts/fish/completions/gp.fish');
-		const commandsScriptPath = path.resolve(currentDir, '../../shell-scripts/fish/commands/gp.fish');
+		const completionsPath = path.join(await this._getCompletionsPath(), path.basename(completionsScriptPath));
+		const commandsDir = await this._getCommandsPath();
 
-		await fs.writeFile(path.join(completionsPath, 'gp.fish'), `source ${completionsScriptPath}\n`, 'utf-8');
-		await fs.writeFile(path.join(commandsPath, 'gp.fish'), `source ${commandsScriptPath}\n`, 'utf-8');
+		await fs.mkdir(path.dirname(completionsPath), { recursive: true });
+		await fs.writeFile(completionsPath, `source '${completionsScriptPath}'\n`, 'utf-8');
+
+		await fs.mkdir(commandsDir, { recursive: true });
+		await shells[this.shell].installCommands(commandsDir);
 
 		this.context.stdout.write(`Successfully installed ${fmt.code(this.shell)} shell helpers\n`);
 
@@ -66,11 +156,11 @@ export class InstallCommand extends Command {
 		}
 
 		if (!this.global) {
-			return path.join(fishUserConfigPath, 'completions');
+			return shells[this.shell].getUserCompletionDir();
 		}
 
 		try {
-			return (await this._execShell('pkg-config --variable completionsdir fish')).trimEnd();
+			return await shells[this.shell].getSystemCompletionDir();
 		} catch (e) {
 			const fmt = this.cli.format();
 			this.context.stderr.write(`Unable to find the completions path via ${fmt.code('pkg-config')}.
@@ -90,11 +180,11 @@ Please make sure ${fmt.code(
 		}
 
 		if (!this.global) {
-			return path.join(fishUserConfigPath, 'functions');
+			return shells[this.shell].getUserCommandsDir();
 		}
 
 		try {
-			return (await this._execShell('pkg-config --variable functionsdir fish')).trimEnd();
+			return await shells[this.shell].getSystemCommandsDir();
 		} catch (e) {
 			const fmt = this.cli.format();
 			this.context.stderr.write(`Unable to find the commands path via ${fmt.code('pkg-config')}.
@@ -106,18 +196,5 @@ Please make sure ${fmt.code(
 
 			return process.exit(1);
 		}
-	}
-
-	private async _execShell(cmd: string): Promise<string> {
-		return await new Promise<string>((resolve, reject) => {
-			exec(cmd, (error, stdout) => {
-				if (error) {
-					reject(error);
-					return;
-				}
-
-				resolve(stdout);
-			});
-		});
 	}
 }

@@ -1,12 +1,18 @@
-import { Command } from 'clipanion';
+import { Command, Option } from 'clipanion';
 import { promises as fs } from 'fs';
 import { getConfig } from '../Config.js';
 
 export class GetListCommand extends Command {
 	static paths = [['get-list']];
 
+	shell = Option.String('--shell', {
+		description: `
+			Specify the shell target to affect output for completion.
+		`
+	});
+
 	async execute(): Promise<number> {
-		const { roots } = await getConfig();
+		const { roots, namespaceSeparator } = await getConfig();
 		const fmt = this.cli.format();
 
 		if (!roots?.length) {
@@ -16,13 +22,25 @@ export class GetListCommand extends Command {
 			return 1;
 		}
 
+		switch (this.shell) {
+			case undefined:
+			case 'bash':
+			case 'fish':
+				break;
+			default:
+				this.context.stderr.write('Please specify a known shell: bash, fish\n');
+				return 1;
+		}
+
 		try {
 			const projectNames = [];
 			for (const root of roots) {
 				const dirContents = await fs.readdir(root.path, { withFileTypes: true });
-				projectNames.push(
-					...dirContents.filter(entry => entry.isDirectory()).map(entry => `${root.name}:${entry.name}`)
-				);
+				const dirs = dirContents.filter(entry => entry.isDirectory());
+				projectNames.push(...dirs.map(entry => `${root.name}${namespaceSeparator ?? ':'}${entry.name}`));
+				if (this.shell === 'bash') {
+					projectNames.push(...dirs.map(entry => entry.name));
+				}
 			}
 
 			this.context.stdout.write(projectNames.join('\n'));

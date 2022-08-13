@@ -4,9 +4,8 @@
 
 pdm is a little tool that helps you manage all your different projects.
 
-The initial version only supports switching between the projects inside one folder. 
-Later, there will be additional features like support for multiple project folders
-and keeping your tooling configuration in sync.
+The initial version only supports switching between projects within project folders.
+Later, there will be additional features like keeping your tooling configuration in sync.
 
 ## Installation
 
@@ -15,13 +14,13 @@ yarn global add pdm
 # or
 npm install -g pdm
 
-pdm install fish # currently, fish is the only supported shell
+pdm install fish # currently, fish and bash are the only supported shells
 ```
 
-You also need to set up your project parent folder. Currently, only a single parent is supported.
+You also need to set up your project parent folder.
 
 ```shell
-pdm config project-root ~/projects
+pdm root add ~/projects
 ```
 
 ## Usage
@@ -52,17 +51,23 @@ gp fo
 ```shell
 gp b
 # ? The input is ambiguous, please choose the correct project you want to go to › - Use arrow-keys. Return to submit.
-# ❯   abc
-#     bar
-#     baz
+# ❯   projects:abc
+#     projects:bar
+#     projects:baz
 
 # after selection, you are in the chosen folder
+```
+
+In Bash, the default namespace separator `:` is treated as a separator for a new token. For bash users
+it is recommended to set the namespace separator to another character or completion will not behave as expected.
+
+```shell
+pdm config namespace-separator /
+# in Git Bash on Windows / will be transformed into the install directory so instead:
+pdm config namespace-separator //
 ```
 
 ## To do
 
 - Shell support
-  - bash
   - zsh
-- Multiple parent folder support (namespacing?)
-- Config updater

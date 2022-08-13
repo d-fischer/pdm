@@ -44,7 +44,7 @@ export class GetPathCommand extends Command {
 
 	async execute(): Promise<number> {
 		await migrateConfig();
-		const { roots } = await getConfig();
+		const { roots, namespaceSeparator } = await getConfig();
 
 		const fmt = this.cli.format();
 		if (!roots?.length) {
@@ -56,7 +56,10 @@ export class GetPathCommand extends Command {
 
 		try {
 			const projectSearch = this.project ?? '';
-			let [rootName, projectName] = projectSearch.split(':') as [string | undefined, string | undefined];
+			let [rootName, projectName] = projectSearch.split(namespaceSeparator ?? ':') as [
+				string | undefined,
+				string | undefined
+			];
 
 			if (!projectName) {
 				projectName = rootName!;

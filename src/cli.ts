@@ -1,4 +1,5 @@
 import { Builtins, Cli } from 'clipanion';
+import { ConfigCommand } from './commands/ConfigCommand.js';
 import { GetListCommand } from './commands/GetListCommand.js';
 import { GetPathCommand } from './commands/GetPathCommand.js';
 import { InstallCommand } from './commands/InstallCommand.js';
@@ -12,6 +13,7 @@ export async function pdm(): Promise<void> {
 	});
 
 	cli.register(Builtins.HelpCommand);
+	cli.register(ConfigCommand);
 	cli.register(GetListCommand);
 	cli.register(GetPathCommand);
 	cli.register(InstallCommand);
