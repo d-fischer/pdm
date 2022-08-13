@@ -12,7 +12,6 @@ export interface ProjectRoot {
 export interface Config {
 	projectRoot?: string;
 	roots?: ProjectRoot[];
-	namespaceSeparator?: string;
 }
 
 async function ensureConfigDir() {
