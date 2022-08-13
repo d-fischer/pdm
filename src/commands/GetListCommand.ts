@@ -6,7 +6,7 @@ export class GetListCommand extends Command {
 	static paths = [['get-list']];
 
 	async execute(): Promise<number> {
-		const { roots } = await getConfig();
+		const { roots, namespaceSeparator } = await getConfig();
 		const fmt = this.cli.format();
 
 		if (!roots?.length) {
@@ -20,8 +20,9 @@ export class GetListCommand extends Command {
 			const projectNames = [];
 			for (const root of roots) {
 				const dirContents = await fs.readdir(root.path, { withFileTypes: true });
+				const prefix = `${root.name}${namespaceSeparator ?? ':'}`;
 				projectNames.push(
-					...dirContents.filter(entry => entry.isDirectory()).map(entry => `${root.name}:${entry.name}`)
+					...dirContents.filter(entry => entry.isDirectory()).map(entry => `${prefix}${entry.name}`)
 				);
 			}
 

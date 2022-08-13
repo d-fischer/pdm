@@ -1,4 +1,5 @@
 import { Builtins, Cli } from 'clipanion';
+import { ConfigCommand } from './commands/ConfigCommand.js';
 import { GetListCommand } from './commands/GetListCommand.js';
 import { GetPathCommand } from './commands/GetPathCommand.js';
 import { InstallCommand } from './commands/InstallCommand.js';
@@ -18,6 +19,7 @@ export async function pdm(): Promise<void> {
 	cli.register(RootAddCommand);
 	cli.register(RootDeleteCommand);
 	cli.register(RootRenameCommand);
+	cli.register(ConfigCommand);
 
 	await cli.runExit(process.argv.slice(2));
 }

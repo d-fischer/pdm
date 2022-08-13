@@ -52,16 +52,23 @@ gp fo
 ```shell
 gp b
 # ? The input is ambiguous, please choose the correct project you want to go to › - Use arrow-keys. Return to submit.
-# ❯   abc
-#     bar
-#     baz
+# ❯   projects:abc
+#     projects:bar
+#     projects:baz
 
 # after selection, you are in the chosen folder
+```
+
+In Bash, the default namespace separator `:` is treated as a separator for a new token. For bash users
+it is recommended to set the namespace separator to another character or completion will not behave as expected.
+
+```shell
+pdm config namespace-separator /
+# in Git Bash on Windows / will be transformed into the install directory so instead:
+pdm config namespace-separator //
 ```
 
 ## To do
 
 - Shell support
   - zsh
-- Multiple parent folder support (namespacing?)
-- Config updater
