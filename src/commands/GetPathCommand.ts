@@ -12,10 +12,12 @@ interface ResultMatch {
 	exact: boolean;
 }
 
-async function findInRoot(root: ProjectRoot, search: string): Promise<ResultMatch[]> {
+async function findInRoot(root: ProjectRoot, search: string, showAllDirectories: boolean): Promise<ResultMatch[]> {
 	const dirContents = await fs.readdir(root.path, { withFileTypes: true });
 
-	const projectNames = dirContents.filter(entry => entry.isDirectory()).map(entry => entry.name);
+	const projectNames = dirContents
+		.filter(entry => (entry.isDirectory() && showAllDirectories ? true : !entry.name.startsWith('.')))
+		.map(entry => entry.name);
 
 	if (projectNames.includes(search)) {
 		return [
@@ -44,7 +46,7 @@ export class GetPathCommand extends Command {
 
 	async execute(): Promise<number> {
 		await migrateConfig();
-		const { roots, namespaceSeparator } = await getConfig();
+		const { roots, namespaceSeparator, showAllDirectories } = await getConfig();
 
 		const fmt = this.cli.format();
 		if (!roots?.length) {
@@ -72,7 +74,7 @@ export class GetPathCommand extends Command {
 					this.context.stderr.write(`There is no project root called ${fmt.code(rootName)}.\n`);
 					return 1;
 				}
-				const matches = await findInRoot(root, projectName);
+				const matches = await findInRoot(root, projectName, showAllDirectories);
 
 				if (matches.length === 0) {
 					this.context.stderr.write(
@@ -108,7 +110,9 @@ export class GetPathCommand extends Command {
 				}
 			}
 
-			const results = (await Promise.all(roots.map(async root => await findInRoot(root, projectName!)))).flat(1);
+			const results = (
+				await Promise.all(roots.map(async root => await findInRoot(root, projectName!, showAllDirectories)))
+			).flat(1);
 
 			let resultsToShow = results.filter(result => result.exact);
 

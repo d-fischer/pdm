@@ -20,12 +20,11 @@ async function execShell(cmd: string): Promise<string> {
 }
 
 interface ShellConfig {
-	completions: string;
 	getUserCompletionDir: () => string;
 	getUserCommandsDir: () => string;
 	getSystemCompletionDir: () => Promise<string>;
 	getSystemCommandsDir: () => Promise<string>;
-	installCommands: (commandDir: string) => Promise<void>;
+	install: (commandDir: string, completionDir: string, command: InstallCommand) => Promise<void>;
 }
 
 const currentDir = path.dirname(url.fileURLToPath(import.meta.url));
@@ -33,7 +32,6 @@ const scriptsPath = (p: string) => path.resolve(currentDir, '../../shell-scripts
 
 const shells: Record<string, ShellConfig> = {
 	bash: {
-		completions: scriptsPath('bash/completions/gp.sh'),
 		getUserCompletionDir() {
 			// Using envPaths for bash likely doesn't make sense for most users.
 			// On Windows, it would tell us to put files in %APPDATA%, which git bash doesn't look at.
@@ -55,7 +53,10 @@ const shells: Record<string, ShellConfig> = {
 		async getSystemCommandsDir() {
 			return '/etc';
 		},
-		async installCommands(commandDir) {
+		async install(commandDir, completionDir) {
+			const completionsScriptPath = scriptsPath('bash/completions/gp.sh');
+			await fs.writeFile(path.join(completionDir, 'gp.sh'), `source '${completionsScriptPath}'\n`, 'utf-8');
+
 			const commandsScriptPath = scriptsPath('bash/commands/gp.sh');
 			const script = `\nsource '${commandsScriptPath}'\n`;
 			// Bash doesn't have a standard directory where functions will be sourced. If we're asked to
@@ -71,7 +72,6 @@ const shells: Record<string, ShellConfig> = {
 		}
 	},
 	fish: {
-		completions: scriptsPath('fish/completions/gp.fish'),
 		getUserCompletionDir() {
 			const fishUserConfigPath = envPaths('fish', { suffix: '' }).config;
 			return path.join(fishUserConfigPath, 'functions');
@@ -86,9 +86,78 @@ const shells: Record<string, ShellConfig> = {
 		async getSystemCommandsDir() {
 			return (await execShell('pkg-config --variable functionsdir fish')).trimEnd();
 		},
-		async installCommands(commandDir) {
+		async install(commandDir, completionDir) {
+			const completionsScriptPath = scriptsPath('fish/commands/gp.fish');
 			const commandsScriptPath = scriptsPath('fish/commands/gp.fish');
+
+			await fs.writeFile(path.join(completionDir, 'gp.fish'), `source '${completionsScriptPath}'\n`, 'utf-8');
 			await fs.writeFile(path.join(commandDir, 'gp.fish'), `source '${commandsScriptPath}'\n`, 'utf-8');
+		}
+	},
+	zsh: {
+		getUserCompletionDir() {
+			return os.homedir();
+		},
+		getUserCommandsDir() {
+			return os.homedir();
+		},
+		async getSystemCompletionDir() {
+			return '/usr/local/share/zsh/site-functions';
+		},
+		async getSystemCommandsDir() {
+			return '/usr/local/share/zsh/site-functions';
+		},
+		async install(commandDir, completionDir, command) {
+			// Zsh doesn't have a standard user level auto load location. If we're asked to install in
+			// the home directory, the user probably wants our install location added to their fpath
+			// in their .zshrc. Unfortunately, just appending the fpath to the end isn't enough since
+			// it needs to be set before the call to `autoload -Uz compinit` in that file, so add it
+			// to the start of the file.
+
+			if (completionDir === os.homedir()) {
+				let oldContents = '';
+				try {
+					oldContents = await fs.readFile(path.join(commandDir, '.zshrc'), 'utf-8');
+				} catch {
+					// ignore, file doesn't exist yet.
+				}
+				await fs.writeFile(
+					path.join(commandDir, '.zshrc'),
+					`fpath=('${scriptsPath('zsh/completions')}' $fpath)\n${oldContents}`
+				);
+			} else {
+				const completionsScriptPath = scriptsPath('zsh/completions/_gp');
+				await fs.writeFile(
+					path.join(completionDir, '_gp'),
+					`#compdef gp\nsource '${completionsScriptPath}'\n`,
+					'utf-8'
+				);
+			}
+
+			if (commandDir === os.homedir()) {
+				let oldContents = '';
+				try {
+					oldContents = await fs.readFile(path.join(commandDir, '.zshrc'), 'utf-8');
+				} catch {
+					// ignore, file doesn't exist yet.
+				}
+				await fs.writeFile(
+					path.join(commandDir, '.zshrc'),
+					`fpath=('${scriptsPath('zsh/commands')}' $fpath)\nautoload -Uz gp\n${oldContents}`
+				);
+			} else {
+				const commandsScriptPath = scriptsPath('zsh/commands/gp');
+				await fs.writeFile(path.join(commandDir, 'gp'), `source '${commandsScriptPath}'\n`, 'utf-8');
+
+				const fmt = command.cli.format();
+				command.context.stdout.write(
+					`The gp command has been added to ${fmt.code(
+						commandDir
+					)}, but not configured for autoloading.\nConfigure autoloading with ${fmt.code(
+						'autoload -Uz gp'
+					)}\n`
+				);
+			}
 		}
 	}
 };
@@ -129,21 +198,19 @@ export class InstallCommand extends Command {
 		const fmt = this.cli.format();
 		if (!{}.hasOwnProperty.call(shells, this.shell)) {
 			this.context.stderr.write(
-				`This command currently only supports the ${fmt.code('fish')} and ${fmt.code('bash')} shells.\n`
+				`This command currently only supports the ${fmt.code('bash')}, ${fmt.code('fish')}, and ${fmt.code(
+					'zsh'
+				)} shells.\n`
 			);
 			return 1;
 		}
 
-		const completionsScriptPath = shells[this.shell].completions;
-
-		const completionsPath = path.join(await this._getCompletionsPath(), path.basename(completionsScriptPath));
+		const completionsDir = await this._getCompletionsPath();
 		const commandsDir = await this._getCommandsPath();
 
-		await fs.mkdir(path.dirname(completionsPath), { recursive: true });
-		await fs.writeFile(completionsPath, `source '${completionsScriptPath}'\n`, 'utf-8');
-
+		await fs.mkdir(completionsDir, { recursive: true });
 		await fs.mkdir(commandsDir, { recursive: true });
-		await shells[this.shell].installCommands(commandsDir);
+		await shells[this.shell].install(commandsDir, completionsDir, this);
 
 		this.context.stdout.write(`Successfully installed ${fmt.code(this.shell)} shell helpers\n`);
 

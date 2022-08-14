@@ -13,6 +13,7 @@ export interface Config {
 	projectRoot?: string;
 	roots?: ProjectRoot[];
 	namespaceSeparator?: string;
+	showAllDirectories: boolean;
 }
 
 async function ensureConfigDir() {
@@ -39,7 +40,9 @@ export async function getConfig(): Promise<Config> {
 	const contents = await getConfigContents();
 
 	if (contents === null) {
-		return {};
+		return {
+			showAllDirectories: false
+		};
 	}
 
 	return JSON.parse(contents) as Config;
@@ -62,6 +65,8 @@ export async function migrateConfig(): Promise<void> {
 		});
 		conf.projectRoot = undefined;
 	}
+
+	conf.showAllDirectories ??= false;
 
 	await writeConfig(conf);
 }

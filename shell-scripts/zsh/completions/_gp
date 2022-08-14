@@ -1,0 +1,3 @@
+#compdef gp
+
+_arguments "1:projects:($(pdm get-list --shell zsh))"
