@@ -14,7 +14,7 @@ yarn global add pdm
 # or
 npm install -g pdm
 
-pdm install fish # currently, fish and bash are the only supported shells
+pdm install fish # currently, bash, fish, and zsh are the only supported shells
 ```
 
 You also need to set up your project parent folder.
@@ -66,8 +66,3 @@ pdm config namespace-separator /
 # in Git Bash on Windows / will be transformed into the install directory so instead:
 pdm config namespace-separator //
 ```
-
-## To do
-
-- Shell support
-  - zsh

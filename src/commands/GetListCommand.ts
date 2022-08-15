@@ -12,7 +12,7 @@ export class GetListCommand extends Command {
 	});
 
 	async execute(): Promise<number> {
-		const { roots, namespaceSeparator } = await getConfig();
+		const { roots, namespaceSeparator, showAllDirectories } = await getConfig();
 		const fmt = this.cli.format();
 
 		if (!roots?.length) {
@@ -26,9 +26,10 @@ export class GetListCommand extends Command {
 			case undefined:
 			case 'bash':
 			case 'fish':
+			case 'zsh':
 				break;
 			default:
-				this.context.stderr.write('Please specify a known shell: bash, fish\n');
+				this.context.stderr.write('Please specify a known shell: bash, fish, zsh\n');
 				return 1;
 		}
 
@@ -36,7 +37,9 @@ export class GetListCommand extends Command {
 			const projectNames = [];
 			for (const root of roots) {
 				const dirContents = await fs.readdir(root.path, { withFileTypes: true });
-				const dirs = dirContents.filter(entry => entry.isDirectory());
+				const dirs = dirContents.filter(
+					entry => entry.isDirectory() && (showAllDirectories || !entry.name.startsWith('.'))
+				);
 				projectNames.push(...dirs.map(entry => `${root.name}${namespaceSeparator ?? ':'}${entry.name}`));
 				if (this.shell === 'bash') {
 					projectNames.push(...dirs.map(entry => entry.name));
