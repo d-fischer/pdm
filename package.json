@@ -1,6 +1,6 @@
 {
   "name": "pdm",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A project directory manager.",
   "type": "module",
   "keywords": [],
