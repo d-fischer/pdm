@@ -37,8 +37,8 @@ export class GetListCommand extends Command {
 			const projectNames = [];
 			for (const root of roots) {
 				const dirContents = await fs.readdir(root.path, { withFileTypes: true });
-				const dirs = dirContents.filter(entry =>
-					entry.isDirectory() && showAllDirectories ? true : !entry.name.startsWith('.')
+				const dirs = dirContents.filter(
+					entry => entry.isDirectory() && (showAllDirectories || !entry.name.startsWith('.'))
 				);
 				projectNames.push(...dirs.map(entry => `${root.name}${namespaceSeparator ?? ':'}${entry.name}`));
 				if (this.shell === 'bash') {
